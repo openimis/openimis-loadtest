@@ -6,11 +6,12 @@ from urllib.parse import urlencode
 from locust import HttpUser, task, run_single_user
 #from locust_plugins.csvreader import CSVReader
 
-LEGACY_LOGIN = True
+LEGACY_LOGIN = False
 SITE_USER = "Admin"
 SITE_PASSWD = "admin123"
 INSUREE_IDS = ["070707070"]
-API_ROOT = "/iapi" if LEGACY_LOGIN else "/api"  # api or ipai, feel free to override if necessary
+#API_ROOT = "/iapi" if LEGACY_LOGIN else "/api"  # api or ipai, feel free to override if necessary
+API_ROOT = "/api"
 HF_UUID = "E4C10505-AFC5-4E44-9E70-C9993B3CEE4B"  # Release
 # HF_UUID = "05EF3CA3-6B37-4793-8714-6CFE97B7B639"  # Eric
 HF_PARENT_UUID = "1DBB7008-9CF8-4D1E-9AAD-1487DD0E813E"  # Release
@@ -54,7 +55,7 @@ class SimpleUser(HttpUser):
     def eligibility(self):
         insuree_id = random.choice(INSUREE_IDS)
         #(insuree_id,) = next(insuree_reader)
-        self.client.post(
+        with self.client.post(
             f"{API_ROOT}/graphql",
             json={
                 "query": """
@@ -100,7 +101,9 @@ class SimpleUser(HttpUser):
                 }""" % (insuree_id,)
             },
             name="insurees"
-        )
+        ) as response:
+            pass
+            # print("Got response1", response.status_code, response.text)
         self.client.post(
             f"{API_ROOT}/graphql",
             json={
@@ -183,7 +186,7 @@ class SimpleUser(HttpUser):
                 name="policiesByInsuree2"
         ) as response:
             try:
-                print("Got response", response.text)
+                print("Got response2", response.status_code, response.text)
                 j = response.json()
                 policyUuid = j["data"]["policiesByInsuree"]["edges"][0]["node"]["policyUuid"]
                 print("Uuid: ", policyUuid)
